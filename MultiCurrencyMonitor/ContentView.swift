@@ -9,51 +9,70 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    @StateObject private var exchangeRateViewModel = ExchangeRateViewModel()
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        VStack {
+            if exchangeRateViewModel.isLoading {
+                ProgressView()
+                    .padding()
+            } else if let error = exchangeRateViewModel.error {
+                VStack {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.largeTitle)
+                        .foregroundColor(.red)
+                    Text("Error: \(error)")
+                        .padding()
+                    Button("Retry") {
+                        exchangeRateViewModel.fetchExchangeRate()
                     }
+                    .buttonStyle(.borderedProminent)
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-            .toolbar {
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                .padding()
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("USD to CNY Exchange Rate")
+                            .font(.headline)
+                        Spacer()
+                        Button(action: {
+                            exchangeRateViewModel.fetchExchangeRate()
+                        }) {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .buttonStyle(.plain)
                     }
+                    
+                    Divider()
+                    
+                    HStack {
+                        Text("1 USD = ")
+                        Text("\(exchangeRateViewModel.rate, specifier: "%.4f") CNY")
+                            .bold()
+                    }
+                    
+                    HStack {
+                        Text("1 CNY = ")
+                        Text("\(1 / exchangeRateViewModel.rate, specifier: "%.4f") USD")
+                            .bold()
+                    }
+                    
+                    Text("Last updated: \(exchangeRateViewModel.lastUpdated)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
+                .padding()
+                .frame(width: 250)
             }
-        } detail: {
-            Text("Select an item")
         }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
+        .onAppear {
+            exchangeRateViewModel.fetchExchangeRate()
         }
     }
 }
 
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
 }

@@ -1,0 +1,17 @@
+
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSAppTransportSecurity</key>
+    <true/>
+    <key>com.apple.security.network.client</key>
+<true/>
+
+<key>com.apple.security.network.server</key>
+<true/>
+
+<key>com.apple.developer.networking.dns</key>
+<true/>
+</dict>
